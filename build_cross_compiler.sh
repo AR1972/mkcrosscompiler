@@ -19,6 +19,11 @@ GCC_VER="7.3.0"
 GDB_VER="8.1"
 GLIBC_VER="2.27"
 LINUX_VER="v4.16"
+MPFR_VER="4.0.1"
+GMP_VER="6.1.2"
+MPC_VER="1.1.0"
+ISL_VER="0.18"
+CLOOG_VER="0.18.1"
 set -e
 #
 # clean up
@@ -32,22 +37,59 @@ rm -fr binutils-$BINUTILS_VER
 rm -fr gcc-$GCC_VER
 rm -fr gdb-$GDB_VER
 rm -fr glibc-$GLIBC_VER
+rm -fr mpfr-$MPFR_VER
+rm -fr mpc-$MPC_VER
+rm -fr gmp-$GMP_VER
+rm -fr isl-$ISL_VER
+rm -fr cloog-$CLOOG_VER
 rm -fr $ARCH-tools
 #
-# download
+# download binutils source
 #
 if [ ! -f binutils-$BINUTILS_VER.tar.gz ]; then
 	wget http://ftp.gnu.org/gnu/binutils/binutils-$BINUTILS_VER.tar.gz
 fi
+#
+#  download compiler sources
+#
 if [ ! -f gcc-$GCC_VER.tar.gz ]; then
 	wget http://ftp.gnu.org/gnu/gcc/gcc-$GCC_VER/gcc-$GCC_VER.tar.gz
 fi
-if [ ! -f gdb-$GDB_VER.tar.gz ]; then
-	wget http://ftp.gnu.org/gnu/gdb/gdb-$GDB_VER.tar.gz
+#
+if [ ! -f mpfr-$MPFR_VER.tar.gz ]; then
+	wget http://ftp.gnu.org/gnu/mpfr/mpfr-$MPFR_VER.tar.gz
 fi
+#
+if [ ! -f gmp-$GMP_VER.tar.bz2 ]; then
+	wget http://ftp.gnu.org/gnu/gmp/gmp-$GMP_VER.tar.bz2
+fi
+#
+if [ ! -f mpc-$MPC_VER.tar.gz ]; then
+	wget http://ftp.gnu.org/gnu/mpc/mpc-$MPC_VER.tar.gz
+fi
+#
+if [ ! -f cloog-$CLOOG_VER.tar.gz ]; then
+	wget https://gcc.gnu.org/pub/gcc/infrastructure/cloog-$CLOOG_VER.tar.gz
+fi
+#
+if [ ! -f isl-$ISL_VER.tar.bz2 ]; then
+	wget https://gcc.gnu.org/pub/gcc/infrastructure/isl-$ISL_VER.tar.bz2
+fi
+#
+# download glibc source
+#
 if [ ! -f glibc-$GLIBC_VER.tar.gz ]; then 
 	wget http://ftp.gnu.org/gnu/glibc/glibc-$GLIBC_VER.tar.gz
 fi
+#
+# download gdb source
+#
+if [ ! -f gdb-$GDB_VER.tar.gz ]; then
+	wget http://ftp.gnu.org/gnu/gdb/gdb-$GDB_VER.tar.gz
+fi
+#
+# download linux kernel source
+#
 if [ ! -d linux/.git ]; then
 	git clone https://github.com/torvalds/linux.git
 fi
@@ -56,6 +98,11 @@ fi
 #
 tar xzfv binutils-$BINUTILS_VER.tar.gz
 tar xzfv gcc-$GCC_VER.tar.gz
+tar xzfv mpfr-$MPFR_VER.tar.gz
+tar xjfv gmp-$GMP_VER.tar.bz2
+tar xzfv mpc-$MPC_VER.tar.gz
+tar xzfv cloog-$CLOOG_VER.tar.gz
+tar xjfv isl-$ISL_VER.tar.bz2
 tar xzfv gdb-$GDB_VER.tar.gz
 tar xzfv glibc-$GLIBC_VER.tar.gz
 #
@@ -66,6 +113,16 @@ mkdir build-gcc
 mkdir build-gdb
 mkdir build-gdbserver
 mkdir build-glibc
+#
+# links
+#
+cd gcc-$GCC_VER
+ln -s ../mpfr-$MPFR_VER mpfr
+ln -s ../gmp-$GMP_VER gmp
+ln -s ../mpc-$MPC_VER mpc
+ln -s ../cloog-$CLOOG_VER cloog
+ln -s ../isl-$ISL_VER isl
+cd ..
 #
 # binutils
 #
@@ -114,7 +171,7 @@ make install-bootstrap-headers=yes install-headers
 make -j4 csu/subdir_lib
 install csu/crt1.o csu/crti.o csu/crtn.o $PREFIX/$TARGET/lib
 $TARGET-gcc -nostdlib -nostartfiles -shared -x c /dev/null \
--o $PREFIX/$TARGET/lib/libc.so
+		-o $PREFIX/$TARGET/lib/libc.so
 touch $PREFIX/$TARGET/include/gnu/stubs.h
 cd ..
 #
@@ -170,5 +227,10 @@ rm -fr build-gdbserver
 rm -fr build-glibc
 rm -fr binutils-$BINUTILS_VER
 rm -fr gcc-$GCC_VER
+rm -fr mpfr-$MPFR_VER
+rm -fr mpc-$MPC_VER
+rm -fr gmp-$GMP_VER
+rm -fr isl-$ISL_VER
+rm -fr cloog-$CLOOG_VER
 rm -fr gdb-$GDB_VER
 rm -fr glibc-$GLIBC_VER
