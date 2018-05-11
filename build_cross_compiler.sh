@@ -1,12 +1,18 @@
 #!/bin/bash
-ARCH=arm
-ARM_OPTIONS="--with-cpu=cortex-a53 --with-fpu=neon-fp-armv8 --with-float=hard"
+ARCH=armhf
+ARM_OPTIONS_HF="--with-cpu=cortex-a7 --with-fpu=neon-vfpv4 --with-float=hard"
+ARM_OPTIONS="--with-cpu=cortex-a7 --with-fpu=neon-vfpv4"
 PPC_OPTIONS="--with-long-double-128"
 GCC_OPTIONS=""
 TYPE=""
-if [ $ARCH = arm ]; then 
-	GCC_OPTIONS=$ARM_OPTIONS
+if [ $ARCH = armhf ]; then
+	GCC_OPTIONS=$ARM_OPTIONS_HF
 	TYPE=gnueabihf
+	ARCH=arm
+elif [ $ARCH = arm ]; then
+	GCC_OPTIONS=$ARM_OPTIONS
+	TYPE=gnueabi
+	ARCH=arm
 elif [ $ARCH = powerpc ]; then
 	GCC_OPTIONS=$POWERPC_OPTIONS
 	TYPE=gnueabi
@@ -15,7 +21,7 @@ TARGET=$ARCH-linux-$TYPE
 PREFIX=$PWD/$ARCH-tools
 export PATH=$PREFIX/bin:$PATH
 BINUTILS_VER="2.30"
-GCC_VER="7.3.0"
+GCC_VER="8.1.0"
 GDB_VER="8.1"
 GLIBC_VER="2.27"
 LINUX_VER="v4.16"
@@ -24,6 +30,7 @@ GMP_VER="6.1.2"
 MPC_VER="1.1.0"
 ISL_VER="0.18"
 CLOOG_VER="0.18.1"
+CPUS=$(nproc --all)
 set -e
 #
 # clean up
@@ -131,7 +138,7 @@ cd build-binutils
 		--prefix=$PREFIX \
 		--target=$TARGET \
 		--disable-multilib
-make -j4
+make -j$CPUS
 make install
 cd ..
 #
@@ -152,7 +159,7 @@ cd build-gcc
 		--enable-languages=c,c++ \
 		--disable-multilib \
 		$GCC_OPTIONS
-make -j4 all-gcc
+make -j$CPUS all-gcc
 make install-gcc
 cd ..
 #
@@ -168,7 +175,7 @@ cd build-glibc
 		--disable-multilib \
 		libc_cv_forced_unwind=yes
 make install-bootstrap-headers=yes install-headers
-make -j4 csu/subdir_lib
+make -j$CPUS csu/subdir_lib
 install csu/crt1.o csu/crti.o csu/crtn.o $PREFIX/$TARGET/lib
 $TARGET-gcc -nostdlib -nostartfiles -shared -x c /dev/null \
 		-o $PREFIX/$TARGET/lib/libc.so
@@ -178,21 +185,21 @@ cd ..
 # gcc
 #
 cd build-gcc
-make -j4 all-target-libgcc
+make -j$CPUS all-target-libgcc
 make install-target-libgcc
 cd ..
 #
 # glibc
 #
 cd build-glibc
-make -j4
+make -j$CPUS
 make install
 cd ..
 #
 # GCC
 #
 cd build-gcc
-make -j4
+make -j$CPUS
 make install
 cd ..
 #
@@ -202,7 +209,7 @@ cd build-gdb
 ../gdb-$GDB_VER/configure \
 		--prefix=$PREFIX \
 		--target=$TARGET
-make -j4
+make -j$CPUS
 make install
 cd ..
 cd build-gdbserver
@@ -210,7 +217,7 @@ cd build-gdbserver
 		--prefix=$PREFIX \
 		--target=$TARGET \
 		--host=$TARGET
-make -j4
+make -j$CPUS
 make install
 cd ..
 #
