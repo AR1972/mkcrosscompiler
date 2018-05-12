@@ -1,11 +1,13 @@
 #!/bin/bash
 ARCH=armhf
+# Raspberry PI 2 -mcpu=cortex-a7 -mfpu=neon-vfpv4
+# Raspberry PI 2 ver 1.2 and Raspberry PI 3 -mcpu=cortex-a53 -mfpu=neon-fp-armv8
 ARM_OPTIONS_HF="--with-cpu=cortex-a7 --with-fpu=neon-vfpv4 --with-float=hard"
 ARM_OPTIONS="--with-cpu=cortex-a7 --with-fpu=neon-vfpv4"
 PPC_OPTIONS="--with-long-double-128"
 GCC_OPTIONS=""
 TYPE=""
-if [ $ARCH = armhf ]; then
+if [ $ARCH = armhf ]; then 
 	GCC_OPTIONS=$ARM_OPTIONS_HF
 	TYPE=gnueabihf
 	ARCH=arm
@@ -24,7 +26,7 @@ BINUTILS_VER="2.30"
 GCC_VER="8.1.0"
 GDB_VER="8.1"
 GLIBC_VER="2.27"
-LINUX_VER="v4.16"
+LINUX_VER="v4.15"
 MPFR_VER="4.0.1"
 GMP_VER="6.1.2"
 MPC_VER="1.1.0"
