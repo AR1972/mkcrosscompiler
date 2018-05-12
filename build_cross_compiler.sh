@@ -7,7 +7,7 @@ ARM_OPTIONS="--with-cpu=cortex-a7 --with-fpu=neon-vfpv4"
 PPC_OPTIONS="--with-long-double-128"
 GCC_OPTIONS=""
 TYPE=""
-if [ $ARCH = armhf ]; then 
+if [ $ARCH = armhf ]; then
 	GCC_OPTIONS=$ARM_OPTIONS_HF
 	TYPE=gnueabihf
 	ARCH=arm
