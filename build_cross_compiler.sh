@@ -176,7 +176,7 @@ cd build-glibc
 		--target=$TARGET \
 		--with-headers=$PREFIX/$TARGET/include \
 		--disable-multilib \
-		--enable-kernel=$LINUX_VER
+		--enable-kernel=$LINUX_VER \
 		libc_cv_forced_unwind=yes
 make install-bootstrap-headers=yes install-headers
 make -j$CPUS csu/subdir_lib
