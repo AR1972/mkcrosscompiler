@@ -18,6 +18,7 @@ elif [ $ARCH = arm ]; then
 elif [ $ARCH = powerpc ]; then
 	GCC_OPTIONS=$POWERPC_OPTIONS
 	TYPE=gnueabi
+	ARCH=powerpc
 fi
 TARGET=$ARCH-linux-$TYPE
 PREFIX=$PWD/$ARCH-tools
@@ -26,7 +27,7 @@ BINUTILS_VER="2.30"
 GCC_VER="8.1.0"
 GDB_VER="8.1"
 GLIBC_VER="2.27"
-LINUX_VER="v4.15"
+LINUX_VER="4.14"
 MPFR_VER="4.0.1"
 GMP_VER="6.1.2"
 MPC_VER="1.1.0"
@@ -148,7 +149,7 @@ cd ..
 #
 cd linux
 rm -fr *
-git checkout -f tags/$LINUX_VER
+git checkout -f tags/v$LINUX_VER
 make ARCH=$ARCH INSTALL_HDR_PATH=$PREFIX/$TARGET headers_install
 cd ..
 #
@@ -175,6 +176,7 @@ cd build-glibc
 		--target=$TARGET \
 		--with-headers=$PREFIX/$TARGET/include \
 		--disable-multilib \
+		--enable-kernel=$LINUX_VER
 		libc_cv_forced_unwind=yes
 make install-bootstrap-headers=yes install-headers
 make -j$CPUS csu/subdir_lib
