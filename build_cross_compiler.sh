@@ -221,7 +221,7 @@ cd build-gdbserver
 		--prefix=$PREFIX \
 		--target=$TARGET \
 		--host=$TARGET
-make -j$CPUS
+make -j$CPUS LDFLAGS=-static
 make install
 cd ..
 #
