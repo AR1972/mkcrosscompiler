@@ -140,7 +140,8 @@ cd build-binutils
 ../binutils-$BINUTILS_VER/configure \
 		--prefix=$PREFIX \
 		--target=$TARGET \
-		--disable-multilib
+		--disable-multilib \
+		--disable-nls
 make -j$CPUS
 make install
 cd ..
@@ -161,6 +162,7 @@ cd build-gcc
 		--target=$TARGET \
 		--enable-languages=c,c++ \
 		--disable-multilib \
+		--disable-nls \
 		$GCC_OPTIONS
 make -j$CPUS all-gcc
 make install-gcc
@@ -177,6 +179,7 @@ cd build-glibc
 		--with-headers=$PREFIX/$TARGET/include \
 		--disable-multilib \
 		--enable-kernel=$LINUX_VER \
+		--disable-nls \
 		libc_cv_forced_unwind=yes
 make install-bootstrap-headers=yes install-headers
 make -j$CPUS csu/subdir_lib
@@ -206,23 +209,63 @@ cd build-gcc
 make -j$CPUS
 make install
 cd ..
-#
 # gdb
 #
 cd build-gdb
 ../gdb-$GDB_VER/configure \
 		--prefix=$PREFIX \
-		--target=$TARGET
+		--target=$TARGET \
+		--disable-nls
 make -j$CPUS
 make install
 cd ..
+#
+# glibc for target
+#
+rm -fr build-glibc
+mkdir build-glibc
+cd build-glibc
+../glibc-$GLIBC_VER/configure \
+		--prefix= \
+		--build=$MACHTYPE \
+		--host=$TARGET \
+		--target=$TARGET \
+		--disable-multilib \
+		--enable-kernel=$LINUX_VER \
+		--disable-nls
+make -j$CPUS
+make DESTDIR=$PREFIX/target install
+cd ..
+#
+# libgcc, libstdc++ for target
+#
+rm -fr build-gcc
+mkdir build-gcc
+cd build-gcc
+../gcc-$GCC_VER/configure \
+		--prefix= \
+		--build=$MACHTYPE \
+		--target=$TARGET \
+		--host=$TARGET \
+		--enable-languages=c,c++ \
+		--disable-multilib \
+		--disable-nls \
+		$GCC_OPTIONS
+make -j$CPUS all-target-libgcc
+make -j$CPUS all-target-libstdc++-v3
+make DESTDIR=$PREFIX/target install-target-libgcc
+make DESTDIR=$PREFIX/target install-target-libstdc++-v3
+cd ..
+#
 cd build-gdbserver
 ../gdb-$GDB_VER/gdb/gdbserver/configure \
-		--prefix=$PREFIX \
+		--prefix= \
+		--build=$MACHTYPE \
 		--target=$TARGET \
-		--host=$TARGET
-make -j$CPUS LDFLAGS=-static
-make install
+		--host=$TARGET \
+		--disable-nls
+make -j$CPUS
+make DESTDIR=$PREFIX/target install
 cd ..
 #
 # package
