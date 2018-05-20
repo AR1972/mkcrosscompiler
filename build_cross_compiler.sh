@@ -1,9 +1,9 @@
 #!/bin/bash
-ARCH=armhf
+ARCH=powerpc
 # Raspberry PI 2 -mcpu=cortex-a7 -mfpu=neon-vfpv4
 # Raspberry PI 2 ver 1.2 and Raspberry PI 3 -mcpu=cortex-a53 -mfpu=neon-fp-armv8
-ARM_OPTIONS_HF="--with-cpu=cortex-a7 --with-fpu=neon-vfpv4 --with-float=hard"
-ARM_OPTIONS="--with-cpu=cortex-a7 --with-fpu=neon-vfpv4"
+ARM_OPTIONS_HF="--with-cpu=cortex-a7 --with-fpu=neon-vfpv4 --with-cpu=cortex-a53 --with-fpu=neon-fp-armv8 --with-float=hard"
+ARM_OPTIONS="--with-cpu=cortex-a7 --with-fpu=neon-vfpv4 --with-cpu=cortex-a53 --with-fpu=neon-fp-armv8"
 PPC_OPTIONS="--with-long-double-128"
 GCC_OPTIONS=""
 TYPE=""
@@ -21,7 +21,7 @@ elif [ $ARCH = powerpc ]; then
 	ARCH=powerpc
 fi
 TARGET=$ARCH-linux-$TYPE
-PREFIX=$PWD/$ARCH-tools
+PREFIX=$PWD/cross
 export PATH=$PREFIX/bin:$PATH
 BINUTILS_VER="2.30"
 GCC_VER="8.1.0"
@@ -52,7 +52,7 @@ rm -fr mpc-$MPC_VER
 rm -fr gmp-$GMP_VER
 rm -fr isl-$ISL_VER
 rm -fr cloog-$CLOOG_VER
-rm -fr $ARCH-tools
+#rm -fr $ARCH-tools
 #
 # download binutils source
 #
@@ -234,7 +234,7 @@ cd build-glibc
 		--enable-kernel=$LINUX_VER \
 		--disable-nls
 make -j$CPUS
-make DESTDIR=$PREFIX/target install
+make DESTDIR=$PREFIX/$ARCH-target install
 cd ..
 #
 # libgcc, libstdc++ for target
@@ -253,8 +253,8 @@ cd build-gcc
 		$GCC_OPTIONS
 make -j$CPUS all-target-libgcc
 make -j$CPUS all-target-libstdc++-v3
-make DESTDIR=$PREFIX/target install-target-libgcc
-make DESTDIR=$PREFIX/target install-target-libstdc++-v3
+make DESTDIR=$PREFIX/$ARCH-target install-target-libgcc
+make DESTDIR=$PREFIX/$ARCH-target install-target-libstdc++-v3
 cd ..
 #
 cd build-gdbserver
@@ -265,12 +265,12 @@ cd build-gdbserver
 		--host=$TARGET \
 		--disable-nls
 make -j$CPUS
-make DESTDIR=$PREFIX/target install
+make DESTDIR=$PREFIX/$ARCH-target install
 cd ..
 #
 # package
 #
-tar zcvf $ARCH-tools.tar.gz $ARCH-tools
+#tar zcvf $ARCH-tools.tar.gz $ARCH-tools
 #
 # clean up
 #
