@@ -2,8 +2,9 @@
 ARCH=powerpc
 # Raspberry PI 2 -mcpu=cortex-a7 -mfpu=neon-vfpv4
 # Raspberry PI 2 ver 1.2 and Raspberry PI 3 -mcpu=cortex-a53 -mfpu=neon-fp-armv8
-ARM_OPTIONS_HF="--with-cpu=cortex-a7 --with-fpu=neon-vfpv4 --with-cpu=cortex-a53 --with-fpu=neon-fp-armv8 --with-float=hard"
-ARM_OPTIONS="--with-cpu=cortex-a7 --with-fpu=neon-vfpv4 --with-cpu=cortex-a53 --with-fpu=neon-fp-armv8"
+ARM_OPTIONS_HF="--with-cpu=cortex-a7 --with-fpu=neon-fp-armv8 --with-float=hard"
+ARM64_OPTIONS="--with-cpu=cortex-a53"
+ARM_OPTIONS="--with-cpu=cortex-a7 --with-fpu=neon-vfpv4"
 PPC_OPTIONS="--with-long-double-128"
 GCC_OPTIONS=""
 TYPE=""
@@ -11,14 +12,22 @@ if [ $ARCH = armhf ]; then
 	GCC_OPTIONS=$ARM_OPTIONS_HF
 	TYPE=gnueabihf
 	ARCH=arm
+	LINUX_ARCH=arm
 elif [ $ARCH = arm ]; then
 	GCC_OPTIONS=$ARM_OPTIONS
 	TYPE=gnueabi
 	ARCH=arm
+	LINUX_ARCH=arm
+elif [ $ARCH = arm64 ]; then
+	GCC_OPTIONS=$ARM64_OPTIONS
+	TYPE=gnueabi
+	ARCH=aarch64
+	LINUX_ARCH=arm64
 elif [ $ARCH = powerpc ]; then
 	GCC_OPTIONS=$POWERPC_OPTIONS
 	TYPE=gnueabi
 	ARCH=powerpc
+	LINUX_ARCH=powerpc
 fi
 TARGET=$ARCH-linux-$TYPE
 PREFIX=$PWD/cross
@@ -151,7 +160,7 @@ cd ..
 cd linux
 rm -fr *
 git checkout -f tags/v$LINUX_VER
-make ARCH=$ARCH INSTALL_HDR_PATH=$PREFIX/$TARGET headers_install
+make ARCH=$LINUX_ARCH INSTALL_HDR_PATH=$PREFIX/$TARGET headers_install
 cd ..
 #
 # GCC
