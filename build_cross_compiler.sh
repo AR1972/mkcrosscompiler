@@ -1,5 +1,8 @@
 #!/bin/bash
-ARCH=powerpc
+# 
+# prerequisites for ubuntu: sudo apt-get build-dep binutils gcc gdb glibc linux-image-$(uname -r) 
+#
+ARCHS="arm64 armhf arm powerpc"
 # Raspberry PI 2 -mcpu=cortex-a7 -mfpu=neon-vfpv4
 # Raspberry PI 2 ver 1.2 and Raspberry PI 3 -mcpu=cortex-a53 -mfpu=neon-fp-armv8
 ARM_OPTIONS_HF="--with-cpu=cortex-a7 --with-fpu=neon-fp-armv8 --with-float=hard"
@@ -8,22 +11,27 @@ ARM_OPTIONS="--with-cpu=cortex-a7 --with-fpu=neon-vfpv4"
 PPC_OPTIONS="--with-long-double-128"
 GCC_OPTIONS=""
 TYPE=""
+for ARCH in $ARCHS; do
 if [ $ARCH = armhf ]; then
+	TARGET_DIR=$ARCH-target
 	GCC_OPTIONS=$ARM_OPTIONS_HF
 	TYPE=gnueabihf
 	ARCH=arm
 	LINUX_ARCH=arm
 elif [ $ARCH = arm ]; then
+	TARGET_DIR=$ARCH-target
 	GCC_OPTIONS=$ARM_OPTIONS
 	TYPE=gnueabi
 	ARCH=arm
 	LINUX_ARCH=arm
 elif [ $ARCH = arm64 ]; then
+	TARGET_DIR=$ARCH-target
 	GCC_OPTIONS=$ARM64_OPTIONS
 	TYPE=gnueabi
 	ARCH=aarch64
 	LINUX_ARCH=arm64
 elif [ $ARCH = powerpc ]; then
+	TARGET_DIR=$ARCH-target
 	GCC_OPTIONS=$POWERPC_OPTIONS
 	TYPE=gnueabi
 	ARCH=powerpc
@@ -32,11 +40,11 @@ fi
 TARGET=$ARCH-linux-$TYPE
 PREFIX=$PWD/cross
 export PATH=$PREFIX/bin:$PATH
-BINUTILS_VER="2.30"
-GCC_VER="8.1.0"
-GDB_VER="8.1"
-GLIBC_VER="2.27"
-LINUX_VER="4.14"
+BINUTILS_VER="2.32"
+GCC_VER="8.3.0"
+GDB_VER="8.2"
+GLIBC_VER="2.29"
+LINUX_VER="5.0"
 MPFR_VER="4.0.1"
 GMP_VER="6.1.2"
 MPC_VER="1.1.0"
@@ -61,7 +69,6 @@ rm -fr mpc-$MPC_VER
 rm -fr gmp-$GMP_VER
 rm -fr isl-$ISL_VER
 rm -fr cloog-$CLOOG_VER
-#rm -fr $ARCH-tools
 #
 # download binutils source
 #
@@ -132,10 +139,27 @@ mkdir build-gcc
 mkdir build-gdb
 mkdir build-gdbserver
 mkdir build-glibc
+if [ ! -d cross ]; then
+	mkdir cross
+fi
 #
 # links
 #
 cd gcc-$GCC_VER
+ln -s ../mpfr-$MPFR_VER mpfr
+ln -s ../gmp-$GMP_VER gmp
+ln -s ../mpc-$MPC_VER mpc
+ln -s ../cloog-$CLOOG_VER cloog
+ln -s ../isl-$ISL_VER isl
+cd ..
+cd binutils-$BINUTILS_VER
+ln -s ../mpfr-$MPFR_VER mpfr
+ln -s ../gmp-$GMP_VER gmp
+ln -s ../mpc-$MPC_VER mpc
+ln -s ../cloog-$CLOOG_VER cloog
+ln -s ../isl-$ISL_VER isl
+cd ..
+cd gdb-$GDB_VER
 ln -s ../mpfr-$MPFR_VER mpfr
 ln -s ../gmp-$GMP_VER gmp
 ln -s ../mpc-$MPC_VER mpc
@@ -152,7 +176,7 @@ cd build-binutils
 		--disable-multilib \
 		--disable-nls
 make -j$CPUS
-make install
+make -j$CPUS install
 cd ..
 #
 # kernel headers
@@ -160,7 +184,7 @@ cd ..
 cd linux
 rm -fr *
 git checkout -f tags/v$LINUX_VER
-make ARCH=$LINUX_ARCH INSTALL_HDR_PATH=$PREFIX/$TARGET headers_install
+make -j$CPUS ARCH=$LINUX_ARCH INSTALL_HDR_PATH=$PREFIX/$TARGET headers_install
 cd ..
 #
 # GCC
@@ -174,7 +198,7 @@ cd build-gcc
 		--disable-nls \
 		$GCC_OPTIONS
 make -j$CPUS all-gcc
-make install-gcc
+make -j$CPUS install-gcc
 cd ..
 #
 # glibc
@@ -190,7 +214,7 @@ cd build-glibc
 		--enable-kernel=$LINUX_VER \
 		--disable-nls \
 		libc_cv_forced_unwind=yes
-make install-bootstrap-headers=yes install-headers
+make -j$CPUS install-bootstrap-headers=yes install-headers
 make -j$CPUS csu/subdir_lib
 install csu/crt1.o csu/crti.o csu/crtn.o $PREFIX/$TARGET/lib
 $TARGET-gcc -nostdlib -nostartfiles -shared -x c /dev/null \
@@ -202,21 +226,21 @@ cd ..
 #
 cd build-gcc
 make -j$CPUS all-target-libgcc
-make install-target-libgcc
+make -j$CPUS install-target-libgcc
 cd ..
 #
 # glibc
 #
 cd build-glibc
 make -j$CPUS
-make install
+make -j$CPUS install
 cd ..
 #
 # GCC
 #
 cd build-gcc
 make -j$CPUS
-make install
+make -j$CPUS install
 cd ..
 # gdb
 #
@@ -226,7 +250,7 @@ cd build-gdb
 		--target=$TARGET \
 		--disable-nls
 make -j$CPUS
-make install
+make -j$CPUS install
 cd ..
 #
 # glibc for target
@@ -243,7 +267,7 @@ cd build-glibc
 		--enable-kernel=$LINUX_VER \
 		--disable-nls
 make -j$CPUS
-make DESTDIR=$PREFIX/$ARCH-target install
+make -j$CPUS DESTDIR=$PREFIX/$TARGET_DIR install
 cd ..
 #
 # libgcc, libstdc++ for target
@@ -262,8 +286,8 @@ cd build-gcc
 		$GCC_OPTIONS
 make -j$CPUS all-target-libgcc
 make -j$CPUS all-target-libstdc++-v3
-make DESTDIR=$PREFIX/$ARCH-target install-target-libgcc
-make DESTDIR=$PREFIX/$ARCH-target install-target-libstdc++-v3
+make -j$CPUS DESTDIR=$PREFIX/$TARGET_DIR install-target-libgcc
+make -j$CPUS DESTDIR=$PREFIX/$TARGET_DIR install-target-libstdc++-v3
 cd ..
 #
 cd build-gdbserver
@@ -274,12 +298,8 @@ cd build-gdbserver
 		--host=$TARGET \
 		--disable-nls
 make -j$CPUS
-make DESTDIR=$PREFIX/$ARCH-target install
+make -j$CPUS DESTDIR=$PREFIX/$TARGET_DIR install
 cd ..
-#
-# package
-#
-#tar zcvf $ARCH-tools.tar.gz $ARCH-tools
 #
 # clean up
 #
@@ -297,3 +317,9 @@ rm -fr isl-$ISL_VER
 rm -fr cloog-$CLOOG_VER
 rm -fr gdb-$GDB_VER
 rm -fr glibc-$GLIBC_VER
+done
+#
+# gzip
+#
+tar zcvf cross.tar.gz cross
+exit
